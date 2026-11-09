@@ -31,12 +31,16 @@ jobs:
           echo "platform = espressif32" >> platformio.ini
           echo "board = esp32-c3-devkitm-1" >> platformio.ini
           echo "framework = arduino" >> platformio.ini
-          echo "build_flags = -Wno-error=return-type" >> platformio.ini
+          echo "build_flags = -DCONFIG_IDF_TARGET_ESP32C3 -Wno-error=return-type" >> platformio.ini
           echo "lib_deps =" >> platformio.ini
           echo "    adafruit/Adafruit GFX Library @ ^1.11.9" >> platformio.ini
           echo "    adafruit/Adafruit BusIO @ ^1.16.1" >> platformio.ini
           echo "    bblanchon/ArduinoJson @ ^6.21.3" >> platformio.ini
           echo "    links2004/WebSockets @ ^2.4.1" >> platformio.ini
+
+      - name: Smart Fix MP3 Decoder Code
+        run: |
+          sed -i '/ClipToShort/,/^}/s/^}/    return 0;\n}/' yoRadio/src/audioI2S/mp3_decoder/mp3_decoder.cpp
 
       - name: Build Firmware
         run: |
