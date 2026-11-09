@@ -40,28 +40,9 @@ jobs:
           echo "    bblanchon/ArduinoJson @ ^6.21.3" >> platformio.ini
           echo "    links2004/WebSockets @ ^2.4.1" >> platformio.ini
 
-      - name: Python True Patch MP3 Decoder
+      - name: Fix line 3371 in MP3 Decoder
         run: |
-          python -c "
-          path = 'yoRadio/src/audioI2S/mp3_decoder/mp3_decoder.cpp'
-          with open(path, 'r', encoding='utf-8') as f:
-              code = f.read()
-          
-          target = 'int16_t ClipToShort(int32_t x, int32_t maxVal)'
-          idx = code.find(target)
-          
-          if idx != -1:
-              close_bracket_idx = code.find('}', idx)
-              if close_bracket_idx != -1:
-                  code = code[:close_bracket_idx] + '    return x;\n' + code[close_bracket_idx:]
-                  with open(path, 'w', encoding='utf-8') as f:
-                      f.write(code)
-                  print('Патч MP3-декодера успешно применен!')
-              else:
-                  print('Ошибка: Закрывающий символ функции не найден')
-          else:
-              print('Ошибка: Сигнатура ClipToShort не найдена в коде')
-          "
+          sed -i '3371i \    return 0;' yoRadio/src/audioI2S/mp3_decoder/mp3_decoder.cpp
 
       - name: Build Firmware
         run: |
