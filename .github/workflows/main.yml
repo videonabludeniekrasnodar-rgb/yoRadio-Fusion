@@ -31,43 +31,50 @@ jobs:
           echo "platform = espressif32" >> platformio.ini
           echo "board = esp32-c3-devkitm-1" >> platformio.ini
           echo "framework = arduino" >> platformio.ini
-          echo "build_flags = -DCONFIG_IDF_TARGET_ESP32C3 -Wno-error=return-type" >> platformio.ini
+          echo "board_build.filesystem = littlefs" >> platformio.ini
+          echo "board_build.partitions = huge_app" >> platformio.ini
+          echo "build_flags = -DCONFIG_IDF_TARGET_ESP32C3 -DCORE_HAS_I2S -DportTICK_RATE_MS=portTICK_PERIOD_MS -DCONFIG_SPI_FLASH_USE_BUFFERS=1 -Wno-error=return-type" >> platformio.ini
           echo "lib_deps =" >> platformio.ini
           echo "    adafruit/Adafruit GFX Library @ ^1.11.9" >> platformio.ini
           echo "    adafruit/Adafruit BusIO @ ^1.16.1" >> platformio.ini
           echo "    bblanchon/ArduinoJson @ ^6.21.3" >> platformio.ini
           echo "    links2004/WebSockets @ ^2.4.1" >> platformio.ini
 
-      - name: Python Regex Patch MP3 Decoder
+      - name: Python True Patch MP3 Decoder
         run: |
           python -c "
-          import re
           path = 'yoRadio/src/audioI2S/mp3_decoder/mp3_decoder.cpp'
           with open(path, 'r', encoding='utf-8') as f:
               code = f.read()
           
-          # Регулярное выражение ищет объявление функции со всеми аргументами и пробелами
-          pattern = r'(int16_t\s+MP3Decoder\s*::\s*ClipToShort\s*\([^)]*\)\s*\{[^}]*)'
-          match = re.search(pattern, code)
+          target = 'int16_t ClipToShort(int32_t x, int32_t maxVal)'
+          idx = code.find(target)
           
-          if match:
-              matched_text = match.group(1)
-              # Заменяем только этот конкретный участок кода, добавляя возврат значения перед }
-              fixed_text = matched_text + '    return x;\n'
-              code = code.replace(matched_text, fixed_text)
-              with open(path, 'w', encoding='utf-8') as f:
-                  f.write(code)
-              print('Патч через регулярные выражения успешно применен!')
+          if idx != -1:
+              close_bracket_idx = code.find('}', idx)
+              if close_bracket_idx != -1:
+                  code = code[:close_bracket_idx] + '    return x;\n' + code[close_bracket_idx:]
+                  with open(path, 'w', encoding='utf-8') as f:
+                      f.write(code)
+                  print('Патч MP3-декодера успешно применен!')
+              else:
+                  print('Ошибка: Закрывающий символ функции не найден')
           else:
-              print('Ошибка: Не удалось найти структуру функции ClipToShort через Regex')
+              print('Ошибка: Сигнатура ClipToShort не найдена в коде')
           "
 
       - name: Build Firmware
         run: |
           pio run -e esp32-c3
 
-      - name: Upload Artifact
+      - name: Build Filesystem Image
+        run: |
+          pio run -t buildfs -e esp32-c3
+
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: yoradio-esp32c3-firmware
-          path: .pio/build/esp32-c3/firmware.bin
+          name: yoradio-esp32c3-full-firmware
+          path: |
+            .pio/build/esp32-c3/firmware.bin
+            .pio/build/esp32-c3/littlefs.bin
