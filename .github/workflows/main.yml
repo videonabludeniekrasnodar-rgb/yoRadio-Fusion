@@ -23,6 +23,10 @@ jobs:
 
       - name: Patch configuration for ESP32-C3
         run: |
+          echo "[platformio]" >> platformio.ini
+          echo "src_dir = yoRadio/src" >> platformio.ini
+          echo "data_dir = yoRadio/data" >> platformio.ini
+          echo "" >> platformio.ini
           echo "[env:esp32-c3]" >> platformio.ini
           echo "platform = espressif32" >> platformio.ini
           echo "board = esp32-c3-devkitm-1" >> platformio.ini
