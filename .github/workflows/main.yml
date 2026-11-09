@@ -11,6 +11,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Clone Original yoRadio (C3 Compatible)
+        run: |
+          git clone https://github.com original-yoradio
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -21,9 +25,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install platformio
 
-      - name: Patch configuration for ESP32-C3
+      - name: Inject myoptions.h and Create Configuration
         run: |
-          echo "[platformio]" >> platformio.ini
+          cd original-yoradio
+          cp ../yoRadio/src/myoptions.h ./yoRadio/src/myoptions.h
+          
+          echo "[platformio]" > platformio.ini
           echo "src_dir = yoRadio/src" >> platformio.ini
           echo "data_dir = yoRadio/data" >> platformio.ini
           echo "" >> platformio.ini
@@ -35,15 +42,16 @@ jobs:
           echo "    adafruit/Adafruit GFX Library @ ^1.11.9" >> platformio.ini
           echo "    adafruit/Adafruit BusIO @ ^1.16.1" >> platformio.ini
           echo "    bblanchon/ArduinoJson @ ^6.21.3" >> platformio.ini
-          echo "    links2004/WebSockets @ ^2.4.1" >> platformio.ini
           echo "    https://github.com" >> platformio.ini
+          echo "    links2004/WebSockets @ ^2.4.1" >> platformio.ini
 
       - name: Build Firmware
         run: |
+          cd original-yoradio
           pio run -e esp32-c3
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: yoradio-esp32c3-firmware
-          path: .pio/build/esp32-c3/firmware.bin
+          path: original-yoradio/.pio/build/esp32-c3/firmware.bin
