@@ -38,9 +38,19 @@ jobs:
           echo "    bblanchon/ArduinoJson @ ^6.21.3" >> platformio.ini
           echo "    links2004/WebSockets @ ^2.4.1" >> platformio.ini
 
-      - name: Smart Fix MP3 Decoder Code
+      - name: Precision Patch MP3 Decoder
         run: |
-          sed -i '/ClipToShort/,/^}/s/^}/    return 0;\n}/' yoRadio/src/audioI2S/mp3_decoder/mp3_decoder.cpp
+          cat << 'EOF' > patch.diff
+          --- yoRadio/src/audioI2S/mp3_decoder/mp3_decoder.cpp
+          +++ yoRadio/src/audioI2S/mp3_decoder/mp3_decoder.cpp
+          @@ -3368,4 +3368,5 @@
+               if (x > maxVal) return maxVal;
+               if (x < -maxVal) return -maxVal;
+          +    return x;
+           }
+           
+          EOF
+          patch -p0 < patch.diff
 
       - name: Build Firmware
         run: |
