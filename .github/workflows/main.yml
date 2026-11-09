@@ -38,26 +38,28 @@ jobs:
           echo "    bblanchon/ArduinoJson @ ^6.21.3" >> platformio.ini
           echo "    links2004/WebSockets @ ^2.4.1" >> platformio.ini
 
-      - name: Python Absolute Patch MP3 Decoder
+      - name: Python Regex Patch MP3 Decoder
         run: |
           python -c "
+          import re
           path = 'yoRadio/src/audioI2S/mp3_decoder/mp3_decoder.cpp'
           with open(path, 'r', encoding='utf-8') as f:
               code = f.read()
           
-          target = 'int16_t MP3Decoder::ClipToShort'
-          idx = code.find(target)
-          if idx != -1:
-              close_bracket_idx = code.find('}', idx)
-              if close_bracket_idx != -1:
-                  code = code[:close_bracket_idx] + '    return x;\n' + code[close_bracket_idx:]
-                  with open(path, 'w', encoding='utf-8') as f:
-                      f.write(code)
-                  print('Патч успешно применен!')
-              else:
-                  print('Ошибка: Закрывающая скобка не найдена')
+          # Регулярное выражение ищет объявление функции со всеми аргументами и пробелами
+          pattern = r'(int16_t\s+MP3Decoder\s*::\s*ClipToShort\s*\([^)]*\)\s*\{[^}]*)'
+          match = re.search(pattern, code)
+          
+          if match:
+              matched_text = match.group(1)
+              # Заменяем только этот конкретный участок кода, добавляя возврат значения перед }
+              fixed_text = matched_text + '    return x;\n'
+              code = code.replace(matched_text, fixed_text)
+              with open(path, 'w', encoding='utf-8') as f:
+                  f.write(code)
+              print('Патч через регулярные выражения успешно применен!')
           else:
-              print('Ошибка: Функция ClipToShort не найдена')
+              print('Ошибка: Не удалось найти структуру функции ClipToShort через Regex')
           "
 
       - name: Build Firmware
