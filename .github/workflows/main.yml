@@ -35,8 +35,8 @@ jobs:
           echo "    adafruit/Adafruit GFX Library @ ^1.11.9" >> platformio.ini
           echo "    adafruit/Adafruit BusIO @ ^1.16.1" >> platformio.ini
           echo "    bblanchon/ArduinoJson @ ^6.21.3" >> platformio.ini
-          echo "    esphome/ESP32-audioI2S @ ^3.0.0" >> platformio.ini
           echo "    links2004/WebSockets @ ^2.4.1" >> platformio.ini
+          echo "    https://github.com" >> platformio.ini
 
       - name: Build Firmware
         run: |
