@@ -38,19 +38,27 @@ jobs:
           echo "    bblanchon/ArduinoJson @ ^6.21.3" >> platformio.ini
           echo "    links2004/WebSockets @ ^2.4.1" >> platformio.ini
 
-      - name: Precision Patch MP3 Decoder
+      - name: Python Absolute Patch MP3 Decoder
         run: |
-          cat << 'EOF' > patch.diff
-          --- yoRadio/src/audioI2S/mp3_decoder/mp3_decoder.cpp
-          +++ yoRadio/src/audioI2S/mp3_decoder/mp3_decoder.cpp
-          @@ -3368,4 +3368,5 @@
-               if (x > maxVal) return maxVal;
-               if (x < -maxVal) return -maxVal;
-          +    return x;
-           }
-           
-          EOF
-          patch -p0 < patch.diff
+          python -c "
+          path = 'yoRadio/src/audioI2S/mp3_decoder/mp3_decoder.cpp'
+          with open(path, 'r', encoding='utf-8') as f:
+              code = f.read()
+          
+          target = 'int16_t MP3Decoder::ClipToShort'
+          idx = code.find(target)
+          if idx != -1:
+              close_bracket_idx = code.find('}', idx)
+              if close_bracket_idx != -1:
+                  code = code[:close_bracket_idx] + '    return x;\n' + code[close_bracket_idx:]
+                  with open(path, 'w', encoding='utf-8') as f:
+                      f.write(code)
+                  print('Патч успешно применен!')
+              else:
+                  print('Ошибка: Закрывающая скобка не найдена')
+          else:
+              print('Ошибка: Функция ClipToShort не найдена')
+          "
 
       - name: Build Firmware
         run: |
